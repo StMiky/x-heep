@@ -4,6 +4,8 @@
 
 MAKE                       = make
 
+FUSESOC_PARAM 			   = "--X_EXT=1 --FPU_SS=0 --DUMMY_ACC=1"
+
 # Get the absolute path
 mkfile_path := $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
 $(info $$You are executing from: $(mkfile_path))
