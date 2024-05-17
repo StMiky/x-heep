@@ -218,7 +218,7 @@ run-blinkyfreertos: mcu-gen verilator-sim
 ## UART Dumping in uart0.log to show recollected results
 run-app-verilator: app
 	cd ./build/openhwgroup.org_systems_core-v-mini-mcu_0/sim-verilator; \
-	./Vtestharness +firmware=../../../sw/build/main.hex; \
+	./Vtestharness +firmware=../../../sw/build/main.hex +max_sim_time=100000000; \
 	cat uart0.log; \
 	cd ../../..;
 
