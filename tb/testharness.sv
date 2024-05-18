@@ -9,8 +9,7 @@ import UPF::*;
 module testharness #(
     parameter COREV_PULP                  = 0,
     parameter FPU                         = 0,
-    parameter FPU_SS                      = 0,
-    parameter DUMMY_ACC                   = 0,
+    parameter FPU_ACC_SEL                 = 0,         //0 sel FPU, 1 sel ACC
     parameter ZFINX                       = 0,
     parameter X_EXT                       = 0,         // eXtension interface in cv32e40x
     parameter JTAG_DPI                    = 0,
@@ -130,12 +129,12 @@ module testharness #(
   // eXtension Interface
 
   if_xif #(
-      .X_NUM_RS   ((FPU_SS) ? fpu_ss_pkg::X_NUM_RS : dummy_accelerator_pkg::X_NUM_RS),
-      .X_ID_WIDTH ((FPU_SS) ? fpu_ss_pkg::X_ID_WIDTH : dummy_accelerator_pkg::X_ID_WIDTH),
-      .X_MEM_WIDTH((FPU_SS) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_accelerator_pkg::X_MEM_WIDTH),
-      .X_RFR_WIDTH((FPU_SS) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_accelerator_pkg::X_RFR_WIDTH),
-      .X_RFW_WIDTH((FPU_SS) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_accelerator_pkg::X_RFW_WIDTH),
-      .X_MISA     ((FPU_SS) ? fpu_ss_pkg::X_MISA : dummy_accelerator_pkg::X_MISA)
+      .X_NUM_RS   ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_NUM_RS : dummy_accelerator_pkg::X_NUM_RS),
+      .X_ID_WIDTH ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_ID_WIDTH : dummy_accelerator_pkg::X_ID_WIDTH),
+      .X_MEM_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_accelerator_pkg::X_MEM_WIDTH),
+      .X_RFR_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_accelerator_pkg::X_RFR_WIDTH),
+      .X_RFW_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_accelerator_pkg::X_RFW_WIDTH),
+      .X_MISA     ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MISA : dummy_accelerator_pkg::X_MISA)
   ) ext_if ();
   //if_xif #(
   //    .X_NUM_RS   (dummy_accelerator_pkg::X_NUM_RS),
@@ -163,8 +162,7 @@ module testharness #(
     $display("%t: the parameter FPU is %x", $time, FPU);
     $display("%t: the parameter ZFINX is %x", $time, ZFINX);
     $display("%t: the parameter X_EXT is %x", $time, X_EXT);
-    $display("%t: the parameter FPU_SS is %x", $time, FPU_SS);
-    $display("%t: the parameter DUMMY_ACC is %x", $time, DUMMY_ACC);
+    $display("%t: the parameter FPU_ACC_SEL is %x", $time, FPU_ACC_SEL);
     $display("%t: the parameter ZFINX is %x", $time, ZFINX);
     $display("%t: the parameter JTAG_DPI is %x", $time, JTAG_DPI);
     $display("%t: the parameter USE_EXTERNAL_DEVICE_EXAMPLE is %x", $time,
@@ -604,64 +602,63 @@ module testharness #(
       );
 `endif
 
-      if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0 && FPU_SS) begin: gen_fpu_ss_wrapper
-        fpu_ss_wrapper #(
-            .PULP_ZFINX(ZFINX),
-            .INPUT_BUFFER_DEPTH(1),
-            .OUT_OF_ORDER(0),
-            .FORWARDING(1),
-            .FPU_FEATURES(fpu_ss_pkg::FPU_FEATURES),
-            .FPU_IMPLEMENTATION(fpu_ss_pkg::FPU_IMPLEMENTATION)
-        ) fpu_ss_wrapper_i (
-            // Clock and reset
-            .clk_i,
-            .rst_ni,
+      if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0) begin
+        if (!FPU_ACC_SEL) begin : gen_fpu
+          fpu_ss_wrapper #(
+              .PULP_ZFINX(ZFINX),
+              .INPUT_BUFFER_DEPTH(1),
+              .OUT_OF_ORDER(0),
+              .FORWARDING(1),
+              .FPU_FEATURES(fpu_ss_pkg::FPU_FEATURES),
+              .FPU_IMPLEMENTATION(fpu_ss_pkg::FPU_IMPLEMENTATION)
+          ) fpu_ss_wrapper_i (
+              // Clock and reset
+              .clk_i,
+              .rst_ni,
 
-            // eXtension Interface
-            .xif_compressed_if(ext_if),
-            .xif_issue_if(ext_if),
-            .xif_commit_if(ext_if),
-            .xif_mem_if(ext_if),
-            .xif_mem_result_if(ext_if),
-            .xif_result_if(ext_if)
-        );
+              // eXtension Interface
+              .xif_compressed_if(ext_if),
+              .xif_issue_if(ext_if),
+              .xif_commit_if(ext_if),
+              .xif_mem_if(ext_if),
+              .xif_mem_result_if(ext_if),
+              .xif_result_if(ext_if)
+          );
+        end else begin : gen_ext_copr
+          dummy_accelerator_wrapper #(
+              .WIDTH             (dummy_accelerator_pkg::XLEN),
+              .IMM_WIDTH         (dummy_accelerator_pkg::IMM_WIDTH),
+              .CtlType           (dummy_accelerator_pkg::CtlType),
+              .TagType           (dummy_accelerator_pkg::TagType),
+              .DUMMY_INSTR_OPCODE(dummy_accelerator_pkg::DUMMY_INSTR_OPCODE),
+              .DUMMY_INSTR_FUNC3 (dummy_accelerator_pkg::DUMMY_INSTR_FUNC3)
+          ) u_dummy_acc_wrapper_i (
+              // Clock and reset
+              .clk_i,
+              .rst_ni,
+              // eXtension Interface
+              .xif_issue_if (ext_if),
+              .xif_commit_if(ext_if),
+              .xif_result_if(ext_if)
+          );
+          // X-if compressed interface
+          assign ext_if.compressed_resp.accept = 1'b0;
+          assign ext_if.compressed_ready       = 1'b1;
+          assign ext_if.compressed_resp.instr  = '0;
+          // X-if memory interface
+          assign ext_if.mem_valid              = 1'b0;
+          assign ext_if.mem_req.id             = '0;
+          assign ext_if.mem_req.addr           = '0;
+          assign ext_if.mem_req.mode           = '0;
+          assign ext_if.mem_req.we             = 1'b0;
+          assign ext_if.mem_req.size           = '0;
+          assign ext_if.mem_req.be             = '0;
+          assign ext_if.mem_req.attr           = '0;
+          assign ext_if.mem_req.wdata          = '0;
+          assign ext_if.mem_req.last           = 1'b0;
+          assign ext_if.mem_req.spec           = 1'b0;
+        end
       end
-
-      if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0 && DUMMY_ACC) begin: gen_dummy_acc_wrapper
-        dummy_accelerator_wrapper #(
-            .WIDTH      (dummy_accelerator_pkg::XLEN),
-            .IMM_WIDTH  (dummy_accelerator_pkg::IMM_WIDTH),
-            .CtlType    (dummy_accelerator_pkg::CtlType),
-            .TagType    (dummy_accelerator_pkg::TagType),
-            .DUMMY_INSTR_OPCODE(dummy_accelerator_pkg::DUMMY_INSTR_OPCODE),
-            .DUMMY_INSTR_FUNC3(dummy_accelerator_pkg::DUMMY_INSTR_FUNC3)
-        ) u_dummy_acc_wrapper_i (
-            // Clock and reset
-            .clk_i,
-            .rst_ni,
-            // eXtension Interface
-            .xif_issue_if (ext_if),
-            .xif_commit_if(ext_if),
-            .xif_result_if(ext_if)
-        );
-        // X-if compressed interface
-        assign ext_if.compressed_resp.accept            =1'b0;
-        assign ext_if.compressed_ready       = 1'b1;
-        assign ext_if.compressed_resp.instr  = '0;
-        // X-if memory interface
-        assign ext_if.mem_valid                = 1'b0;
-        assign ext_if.mem_req.id               = '0;
-        assign ext_if.mem_req.addr             = '0;
-        assign ext_if.mem_req.mode             = '0;
-        assign ext_if.mem_req.we               = 1'b0;
-        assign ext_if.mem_req.size             = '0;
-        assign ext_if.mem_req.be               = '0;
-        assign ext_if.mem_req.attr             = '0;
-        assign ext_if.mem_req.wdata            = '0;
-        assign ext_if.mem_req.last             = 1'b0;
-        assign ext_if.mem_req.spec             = 1'b0;
-      end
-
     end else begin : gen_DONT_USE_EXTERNAL_DEVICE_EXAMPLE
       assign slow_ram_slave_resp.gnt = '0;
       assign slow_ram_slave_resp.rdata = '0;

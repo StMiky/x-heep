@@ -215,17 +215,11 @@ parameters:
     description: |
       Enables testbench modules compilation. Admitted values: 1|0.
     default: 1
-  FPU_SS:
+  FPU_ACC_SEL:
     datatype: int
     paramtype: vlogparam
     description: |
-      Enables FPU SS subsystem. Admitted values: 1|0.
-    default: 0
-  DUMMY_ACC:  # mutual exclusive with FPU_SS
-    datatype: int
-    paramtype: vlogparam
-    description: |
-      Enables dummy accelerator. Admitted values: 1|0.
+      Enables FPU SS if 0, external accelerator if 1.
     default: 0
   USE_UPF:
     datatype: bool
@@ -332,8 +326,7 @@ targets:
     - FPU
     - JTAG_DPI
     - X_EXT
-    - FPU_SS
-    - DUMMY_ACC
+    - FPU_ACC_SEL
     - USE_EXTERNAL_DEVICE_EXAMPLE
     - USE_UPF
     - REMOVE_OBI_FIFO
@@ -402,8 +395,6 @@ targets:
     - FPU
     - JTAG_DPI
     - X_EXT
-    - FPU_SS
-    - DUMMY_ACC
     - USE_EXTERNAL_DEVICE_EXAMPLE
     - USE_UPF
     - REMOVE_OBI_FIFO

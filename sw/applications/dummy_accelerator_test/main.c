@@ -8,11 +8,17 @@
 
 int main(void)
 {
-    register int dest = 0;
+    volatile register int dest = 0;
     register int source = 42;
     register int source2 = 2;
-    //DUMMY(dest, source, 5);
-    asm volatile ("add %0, %1, %2" : "=r" (dest) : "r" (source), "r" (source2));
+    dest = source + source2; //44
+    source2 +=dest; //46
+    source *= source2;  //1936
+    DUMMY(dest, source, 7);
+    //DUMMY(dest, source, 1);
+    //asm volatile ("add %0, %1, %2" : "=r" (dest) : "r" (source), "r" (source2));
+    dest = source + source2;
+    dest = source *source2;
     return 0;
 }
 
