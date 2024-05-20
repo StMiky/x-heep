@@ -15,10 +15,8 @@
 module dummy_accelerator_wrapper #(
     parameter int unsigned      WIDTH = 32,
     parameter int unsigned      IMM_WIDTH = dummy_accelerator_pkg::IMM_WIDTH,
-    parameter type             CtlType = dummy_accelerator_pkg::CtlType,
-    parameter type             TagType = dummy_accelerator_pkg::TagType,
-    parameter logic [dummy_accelerator_pkg::OPCODE_SIZE-1:0] DUMMY_INSTR_OPCODE = 7'b1110111,
-    parameter logic [dummy_accelerator_pkg::FUNC3-1:0] DUMMY_INSTR_FUNC3 = 3'b000
+    parameter type             CtlType_t = dummy_accelerator_pkg::CtlType_t,
+    parameter type             TagType_t = dummy_accelerator_pkg::TagType_t
 ) (
     input logic              clk_i,
     input logic              rst_ni,   
@@ -28,29 +26,51 @@ module dummy_accelerator_wrapper #(
     if_xif.coproc_result     xif_result_if      // result interface
 );
 
-
+import dummy_accelerator_pkg::*;
 
 // XIF-issue <--> coproc
+logic[31:0] instr;
 logic valid_instr;
 logic cpu_copr_valid, copr_cpu_ready;
 logic [WIDTH-1:0] rs1_value;
 logic [IMM_WIDTH-1:0] imm_value;
-TagType issue_copr_tag;
+TagType_t issue_copr_tag;
+// control selection decoder
+ctl_type_t ctl;
 
 // XIF-result <--> coproc
 logic copr_cpu_valid, cpu_copr_ready;
-TagType copr_result_tag;
+TagType_t copr_result_tag;
 logic [WIDTH-1:0] copr_result;
 
 // XIF-commit <--> coproc
 logic copr_flush;
 
-
 // X-IF issue signals mapping
 // Decode instruction and accept. issue_resp signals
-assign valid_instr = (xif_issue_if.issue_req.instr[dummy_accelerator_pkg::OPCODE_SIZE-1:0] == DUMMY_INSTR_OPCODE && xif_issue_if.issue_req.instr[14:12] == DUMMY_INSTR_FUNC3) ? 1'b1 : 1'b0;
+assign instr = xif_issue_if.issue_req.instr;
+
+// TODO: do this with a case statement
+always_comb begin : insn_decoder
+    valid_instr = 1'b0; // default case
+    ctl = EU_CTL_ITERATIVE;
+    unique casez (instr)
+        DUMMY_PIPELINE: begin
+            valid_instr = 1'b1;
+            ctl = EU_CTL_PIPELINE;
+        end
+        DUMMY_ITERATIVE: begin // iterative
+            valid_instr = 1'b1;
+            ctl = EU_CTL_ITERATIVE;
+        end
+        default: ;
+    endcase
+end
+
 assign xif_issue_if.issue_resp.accept = valid_instr;
+// Issue ready signal
 assign xif_issue_if.issue_ready = (valid_instr) ? copr_cpu_ready : xif_issue_if.issue_valid;
+// be ready if valid instr and instr not recognized, otherwise the CPU will stall waiting for the copr ready
 assign xif_issue_if.issue_resp.writeback = 1'b1;
 // Issue req signals. valid input is issue_valid and input operands valid
 assign cpu_copr_valid = xif_issue_if.issue_valid && xif_issue_if.issue_req.rs_valid[0] && valid_instr;
@@ -78,12 +98,14 @@ assign copr_flush = xif_commit_if.commit.commit_kill && xif_commit_if.commit_val
 dummy_accelerator_top #(
     .WIDTH(WIDTH),
     .IMM_WIDTH(IMM_WIDTH),
-    .CtlType(CtlType),
-    .TagType(TagType)
+    .CtlType_t(CtlType_t),
+    .TagType_t(TagType_t),
+    .MAX_PIPE_LENGTH(MAX_PIPE_LENGTH)
 ) u_dummy_accelerator_top (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
     .flush_i        (copr_flush),
+    .ctl_i          (ctl),              // select iterative or pipeline accelerator
     .valid_i        (cpu_copr_valid),
     .ready_o        (copr_cpu_ready),
     .ready_i        (cpu_copr_ready),

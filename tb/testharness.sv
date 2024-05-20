@@ -626,12 +626,10 @@ module testharness #(
           );
         end else begin : gen_ext_copr
           dummy_accelerator_wrapper #(
-              .WIDTH             (dummy_accelerator_pkg::XLEN),
-              .IMM_WIDTH         (dummy_accelerator_pkg::IMM_WIDTH),
-              .CtlType           (dummy_accelerator_pkg::CtlType),
-              .TagType           (dummy_accelerator_pkg::TagType),
-              .DUMMY_INSTR_OPCODE(dummy_accelerator_pkg::DUMMY_INSTR_OPCODE),
-              .DUMMY_INSTR_FUNC3 (dummy_accelerator_pkg::DUMMY_INSTR_FUNC3)
+              .WIDTH    (dummy_accelerator_pkg::XLEN),
+              .IMM_WIDTH(dummy_accelerator_pkg::IMM_WIDTH),
+              .CtlType_t  (dummy_accelerator_pkg::CtlType_t),
+              .TagType_t  (dummy_accelerator_pkg::TagType_t)
           ) u_dummy_acc_wrapper_i (
               // Clock and reset
               .clk_i,

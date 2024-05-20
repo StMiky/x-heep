@@ -13,13 +13,13 @@
 // Date: 17/05/2024
 
 
-module dummy_accelerator_cu #(
-    parameter type                  CtlType = logic
+module dummy_accelerator_iterative_cu #(
+    parameter type                  CtlType_t = logic
 ) (
     input  logic                    clk_i,
     input  logic                    rst_ni,
     input  logic                    flush_i,
-    input CtlType                   ctl_i,
+    input CtlType_t                   ctl_i,
     input logic                     tc_i,
     // signals from/to upstream hw
     input logic                     valid_i,
@@ -61,7 +61,7 @@ module dummy_accelerator_cu #(
     dummy_fsm_state_t curr_state, next_state;
 
     assign multicycle = (ctl_i == 0)? 1'b0 : 1'b1;
-    
+
     /////////
     // FSM //
     /////////
@@ -74,7 +74,7 @@ module dummy_accelerator_cu #(
                     if (ready_i) begin
                         if (!multicycle) next_state = COMPUTE;
                         else next_state = WAIT;
-                    end else begin 
+                    end else begin
                         if (!multicycle) next_state = WAIT_CORE;
                         else next_state = WAIT;
                     end
@@ -85,11 +85,11 @@ module dummy_accelerator_cu #(
                     if (ready_i) next_state = COMPUTE;
                     else next_state = WAIT_CORE;
                 end else next_state = WAIT;
-            end  
+            end
             WAIT_CORE: begin
                 if (ready_i) next_state = COMPUTE; //ready_o = 0
                 else next_state = WAIT_CORE;
-            end 
+            end
             default: next_state = COMPUTE;
         endcase
     end
@@ -118,7 +118,7 @@ module dummy_accelerator_cu #(
             end
             WAIT: begin
                 valid_o = tc_i; // Mealy
-                ready_o = 1'b0; 
+                ready_o = 1'b0;
                 ctl_buff_en_o = 1'b0; // Do not enable ctl sampling
                 ctl_buff_sel_o = 1'b1;    //1 select buffered ctl
                 out_buff_sel_o = 1'b1; // sampled out sel
@@ -136,7 +136,7 @@ module dummy_accelerator_cu #(
             default: ;  // use default values
         endcase
     end
-        
+
     // FSM state register
     always_ff @(posedge clk_i or negedge rst_ni) begin : dummy_fsm
         if (!rst_ni) begin

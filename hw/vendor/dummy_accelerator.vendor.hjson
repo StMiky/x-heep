@@ -7,7 +7,7 @@
 
   upstream: {
     url: "https://github.com/flague/dummy_accelerator.git",
-    rev: "53f7d3d1390ac0b9b4dd1e9a8497f1183b5b65ca", #main
+    rev: "63337b5db419fae4a720471077253140c8e9a0b2", #feat-pipeline branch
   },
 
   exclude_from_upstream: [
