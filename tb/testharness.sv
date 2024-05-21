@@ -628,8 +628,8 @@ module testharness #(
           dummy_accelerator_wrapper #(
               .WIDTH    (dummy_accelerator_pkg::XLEN),
               .IMM_WIDTH(dummy_accelerator_pkg::IMM_WIDTH),
-              .CtlType_t  (dummy_accelerator_pkg::CtlType_t),
-              .TagType_t  (dummy_accelerator_pkg::TagType_t)
+              .CtlType_t(dummy_accelerator_pkg::CtlType_t),
+              .TagType_t(dummy_accelerator_pkg::TagType_t)
           ) u_dummy_acc_wrapper_i (
               // Clock and reset
               .clk_i,

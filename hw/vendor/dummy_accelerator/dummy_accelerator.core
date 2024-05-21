@@ -15,6 +15,8 @@ filesets:
     - rtl/updown_counter.sv
     - rtl/dummy_accelerator_iterative_cu.sv
     - rtl/dummy_accelerator_iterative.sv
+    - rtl/dummy_accelerator_pipeline_cu.sv
+    - rtl/dummy_accelerator_cu.sv
     - rtl/dummy_accelerator_pipeline.sv
     - rtl/dummy_accelerator_top.sv
     file_type: systemVerilogSource

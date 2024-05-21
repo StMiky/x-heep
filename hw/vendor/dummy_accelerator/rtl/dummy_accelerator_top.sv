@@ -65,6 +65,23 @@ always_comb begin : input_selection
     endcase
 end
 
+logic imm_buff_en, imm_buff_sel, ctl_pipe_en;
+
+// Small CU
+dummy_accelerator_cu #(
+    .CtlType_t(CtlType_t)
+) u_dummy_accelerator_cu (
+    .clk_i          (clk_i),
+    .rst_ni         (rst_ni),
+    .flush_i        (flush_i),
+    .imm_i          (imm_i),
+    .valid_i        (valid_i),
+    .ready_i        (ready_i),
+    .ctl_pipe_en_o  (ctl_pipe_en),
+    .imm_buff_en_o  (imm_buff_en),
+    .imm_buff_sel_o (imm_buff_sel)
+);
+
 // Iterative accelerator instance
 dummy_accelerator_iterative #(
     .WIDTH(WIDTH),
@@ -118,7 +135,7 @@ generate
                 ctl_pipe[i] <= '0;
             end else if (flush_i) begin
                 ctl_pipe[i] <= '0;
-            end else begin  // TODO: enable signal missing (valid, ready_i?)
+            end else if(ctl_pipe_en) begin  // TODO: enable signal missing (valid, ready_i?)
                 ctl_pipe[i] <= ctl_pipe[i-1];
             end
         end
@@ -132,14 +149,19 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
         imm_q <= '0;
     end else if (flush_i) begin
         imm_q <= '0;
-    end else if (valid_i) begin
-        imm_q <= imm_i;
+    end else if (imm_buff_en) begin
+        imm_q <= (imm_i==0) ? 1 : imm_i;    //TODO: check it still works for iterative
     end
 end
 // Ctl signal selection
 // SW HYPHOTHESIS: THE TWO ACCELERATORS CANNOT BE ACTIVATED ONE AFTER THE OTHER.
-// TODO: remove this constraint if possible
-assign ctl = (imm_i == '0 && valid_i) ? ctl_pipe[imm_i[$clog2(MAX_PIPE_LENGTH)-1:0]] : ctl_pipe[imm_q[$clog2(MAX_PIPE_LENGTH)-1:0]];
+// TODO: does not work with pipeline length 0
+
+assign ctl = imm_buff_sel ? ctl_pipe[imm_q[$clog2(MAX_PIPE_LENGTH)-1:0]] : ctl_pipe[imm_i[$clog2(MAX_PIPE_LENGTH)-1:0]];
+
+
+// Move here sample ctl register (TODO: move here from the iterative accelerator)
+
 
 // Output selection
 always_comb begin : output_selection
@@ -149,7 +171,7 @@ always_comb begin : output_selection
     tag_o = copr_result_tag_iterative;
     unique case(ctl)
         EU_CTL_PIPELINE: begin
-            ready_o = copr_cpu_ready_pipeline;
+            ready_o = copr_cpu_ready_pipeline; // this works only if one is active at a time.
             valid_o = copr_cpu_valid_pipeline;
             result_o = copr_result_pipeline;
             tag_o = copr_result_tag_pipeline;

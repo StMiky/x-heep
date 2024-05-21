@@ -19,11 +19,21 @@ int main(void)
     dest = source + source2; //44
     source2 +=dest; //46
     source *= source2;  //1936
-    //DUMMY_ITERATIVE(dest, source, 7);
-    DUMMY_PIPELINE(dest, source, 5);
-    DUMMY_PIPELINE(dest, source, 5);
-    DUMMY_PIPELINE(dest, source, 5);
-    //DUMMY(dest, source, 1);
+    // use either this block for iterative
+    // ------------------------------------------------
+    DUMMY_ITERATIVE(dest, source, 7);
+    DUMMY_ITERATIVE(dest, source, 5);
+    DUMMY_ITERATIVE(dest, source, 12);
+    // ------------------------------------------------
+    //or this block for pipeline. Constraint: latency MUST be constant
+    // ------------------------------------------------
+    //DUMMY_PIPELINE(dest, source, 4);
+    //DUMMY_PIPELINE(dest, source, 4);
+    //DUMMY_PIPELINE(dest, source, 4);
+    //DUMMY_PIPELINE(dest, source, 4);
+    //DUMMY_PIPELINE(dest, source, 4);
+    //DUMMY_PIPELINE(dest, source, 4);
+    // ------------------------------------------------
     //asm volatile ("add %0, %1, %2" : "=r" (dest) : "r" (source), "r" (source2));
     dest = source + source2;
     dest = source *source2;

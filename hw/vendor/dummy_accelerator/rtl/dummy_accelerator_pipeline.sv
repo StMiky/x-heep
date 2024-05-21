@@ -48,6 +48,27 @@ logic valid_pipe [MAX_PIPE_LENGTH];
 // the cu is a fsm which controls the datapath, and is able to go into a wait state which lasts N_CYCLES
 // N_cycles is the number of cycles the accelerator has to wait before sending the result back to the processor
 // the accelerator ony gives the valid signal after N_CYCLES cycles (>=!)
+// cu signals
+logic ctl_reg_en, ctl_reg_sel; // enable ctl sampling, ctl mux control
+//logic out_reg_en, out_reg_sel; // enable out sampling, out mux control
+
+//////////////////
+// Control Unit //
+//////////////////
+
+dummy_accelerator_pipeline_cu #(
+    .CtlType_t    (CtlType_t)
+) u_dummy_pipeline_acc_cu(
+    .clk_i              (clk_i),
+    .rst_ni             (rst_ni),
+    .flush_i            (flush_i),
+    .ctl_i              (ctl),    // dummy ctl signal (insert for possible future uses)
+    .valid_i            (valid_i),
+    .ready_o            (ready_downstream),
+    .ready_i            (ready_i),
+    .ctl_buff_en_o      (ctl_reg_en),
+    .ctl_buff_sel_o     (ctl_reg_sel)
+);
 
 
 //////////////
@@ -67,8 +88,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
         ctl_q <= '0;
     end else if (flush_i) begin
         ctl_q <= '0;
-    end else if (valid_i) begin
-        ctl_q <= imm_i;
+    end else if (ctl_reg_en) begin
+        ctl_q <= (imm_i == 0) ? 1 : imm_i;
     end
 end
 
@@ -107,9 +128,9 @@ endgenerate
 
 // TODO: need an FSM to manage the case imm_i == 0, otherwise cannot manage case in which
 // ready_i=0, because ctl=imm_i and at next cycle it is lost, while I should sample imm_i
-assign ctl = (imm_i == 0 || valid_i) ? imm_i : ctl_q;
+assign ctl = (ctl_reg_sel) ? ctl_q : imm_i;
 // Output assignment
-assign ready_downstream = (imm_i == 0) ? ready_i : 1'b1; // always ready if upstream ready to accept result
+//assign ready_downstream = (imm_i == 0) ? ready_i : 1'b1; // always ready if upstream ready to accept result
 assign ready_o = ready_downstream;
 assign valid_o = valid_pipe[ctl[$clog2(MAX_PIPE_LENGTH)-1:0]];
 assign result_o = result_pipe[ctl[$clog2(MAX_PIPE_LENGTH)-1:0]];
