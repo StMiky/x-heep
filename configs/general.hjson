@@ -3,7 +3,7 @@
     bus_type: "onetoM",
     ram_banks: {
         code_and_data: {
-            num: 2
+            num: 4
             sizes: [32]
         }
     }
@@ -14,11 +14,11 @@
             name: code
             start: 0
             #minimum size for freeRTOS and clang
-            size: 0x00000C800
+            size: 0x000016800
         },
         {
             name: data
-            start: 0x00000C800
+            start: 0x000016800
         }
     ]
 }

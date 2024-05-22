@@ -129,12 +129,12 @@ module testharness #(
   // eXtension Interface
 
   if_xif #(
-      .X_NUM_RS   ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_NUM_RS : dummy_accelerator_pkg::X_NUM_RS),
-      .X_ID_WIDTH ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_ID_WIDTH : dummy_accelerator_pkg::X_ID_WIDTH),
-      .X_MEM_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_accelerator_pkg::X_MEM_WIDTH),
-      .X_RFR_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_accelerator_pkg::X_RFR_WIDTH),
-      .X_RFW_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_accelerator_pkg::X_RFW_WIDTH),
-      .X_MISA     ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MISA : dummy_accelerator_pkg::X_MISA)
+      .X_NUM_RS   ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_NUM_RS : dummy_accelerator_pkg::XNumRs),
+      .X_ID_WIDTH ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_ID_WIDTH : dummy_accelerator_pkg::XIdWidth),
+      .X_MEM_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_accelerator_pkg::XMemWidth),
+      .X_RFR_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_accelerator_pkg::XRfrWidth),
+      .X_RFW_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_accelerator_pkg::XRfwWidth),
+      .X_MISA     ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MISA : dummy_accelerator_pkg::XMisa)
   ) ext_if ();
   //if_xif #(
   //    .X_NUM_RS   (dummy_accelerator_pkg::X_NUM_RS),
@@ -626,10 +626,10 @@ module testharness #(
           );
         end else begin : gen_ext_copr
           dummy_accelerator_wrapper #(
-              .WIDTH    (dummy_accelerator_pkg::XLEN),
-              .IMM_WIDTH(dummy_accelerator_pkg::IMM_WIDTH),
-              .CtlType_t(dummy_accelerator_pkg::CtlType_t),
-              .TagType_t(dummy_accelerator_pkg::TagType_t)
+              .WIDTH        (dummy_accelerator_pkg::XLEN),
+              .IMM_WIDTH    (dummy_accelerator_pkg::ImmWidth),
+              .conf_type_t  (dummy_accelerator_pkg::conf_type_t),
+              .tag_type_t   (dummy_accelerator_pkg::tag_type_t)
           ) u_dummy_acc_wrapper_i (
               // Clock and reset
               .clk_i,

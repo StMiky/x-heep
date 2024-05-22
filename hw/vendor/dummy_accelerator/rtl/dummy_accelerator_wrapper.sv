@@ -14,9 +14,10 @@
 
 module dummy_accelerator_wrapper #(
     parameter int unsigned      WIDTH = 32,
-    parameter int unsigned      IMM_WIDTH = dummy_accelerator_pkg::IMM_WIDTH,
-    parameter type             CtlType_t = dummy_accelerator_pkg::CtlType_t,
-    parameter type             TagType_t = dummy_accelerator_pkg::TagType_t
+    parameter int unsigned      IMM_WIDTH = dummy_accelerator_pkg::ImmWidth,
+    parameter int unsigned      MAX_PIPE_LENGTH = dummy_accelerator_pkg::MaxPipeLength,
+    parameter type             conf_type_t = dummy_accelerator_pkg::conf_type_t,
+    parameter type             tag_type_t = dummy_accelerator_pkg::tag_type_t
 ) (
     input logic              clk_i,
     input logic              rst_ni,   
@@ -34,13 +35,13 @@ logic valid_instr;
 logic cpu_copr_valid, copr_cpu_ready;
 logic [WIDTH-1:0] rs1_value;
 logic [IMM_WIDTH-1:0] imm_value;
-TagType_t issue_copr_tag;
+tag_type_t issue_copr_tag;
 // control selection decoder
 ctl_type_t ctl;
 
 // XIF-result <--> coproc
 logic copr_cpu_valid, cpu_copr_ready;
-TagType_t copr_result_tag;
+tag_type_t copr_result_tag;
 logic [WIDTH-1:0] copr_result;
 
 // XIF-commit <--> coproc
@@ -55,11 +56,11 @@ always_comb begin : insn_decoder
     valid_instr = 1'b0; // default case
     ctl = EU_CTL_ITERATIVE;
     unique casez (instr)
-        DUMMY_PIPELINE: begin
+        DummyPipeline: begin
             valid_instr = 1'b1;
             ctl = EU_CTL_PIPELINE;
         end
-        DUMMY_ITERATIVE: begin // iterative
+        DummyIterative: begin // iterative
             valid_instr = 1'b1;
             ctl = EU_CTL_ITERATIVE;
         end
@@ -98,8 +99,8 @@ assign copr_flush = xif_commit_if.commit.commit_kill && xif_commit_if.commit_val
 dummy_accelerator_top #(
     .WIDTH(WIDTH),
     .IMM_WIDTH(IMM_WIDTH),
-    .CtlType_t(CtlType_t),
-    .TagType_t(TagType_t),
+    .conf_type_t(conf_type_t),
+    .tag_type_t(tag_type_t),
     .MAX_PIPE_LENGTH(MAX_PIPE_LENGTH)
 ) u_dummy_accelerator_top (
     .clk_i          (clk_i),
