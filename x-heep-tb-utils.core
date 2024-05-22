@@ -36,6 +36,7 @@ filesets:
   tb-harness:
     depend:
     - pulp-platform.org:ip:fpu_ss
+    - polito:len5:dummy-coproc
     files:
     - tb/tb_util.svh: {is_include_file: true}
     - tb/testharness_pkg.sv

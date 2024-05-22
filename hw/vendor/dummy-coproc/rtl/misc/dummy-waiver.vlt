@@ -1,0 +1,13 @@
+// Copyright 2024 Politecnico di Torino.
+// Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+//
+// File: dummy-waivers.vlt
+// Author:  Michele Caon
+// Date: 22/05/2024
+// Description: Verilator waivers
+
+`verilator_config
+// Unused parameters in package
+lint_off -rule UNUSED -file "*/dummy_pkg.sv" -match "Parameter is not used: '*'"
+lint_off -rule UNUSED -file "*/dummy_instr_pkg.sv" -match "Parameter is not used: '*'"

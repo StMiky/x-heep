@@ -129,22 +129,13 @@ module testharness #(
   // eXtension Interface
 
   if_xif #(
-      .X_NUM_RS   ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_NUM_RS : dummy_accelerator_pkg::X_NUM_RS),
-      .X_ID_WIDTH ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_ID_WIDTH : dummy_accelerator_pkg::X_ID_WIDTH),
-      .X_MEM_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_accelerator_pkg::X_MEM_WIDTH),
-      .X_RFR_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_accelerator_pkg::X_RFR_WIDTH),
-      .X_RFW_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_accelerator_pkg::X_RFW_WIDTH),
-      .X_MISA     ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MISA : dummy_accelerator_pkg::X_MISA)
+      .X_NUM_RS   ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_NUM_RS : dummy_pkg::XNumRs),
+      .X_ID_WIDTH ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_ID_WIDTH : dummy_pkg::XIdWidth),
+      .X_MEM_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MEM_WIDTH : dummy_pkg::XMemWidth),
+      .X_RFR_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFR_WIDTH : dummy_pkg::XRfrWidth),
+      .X_RFW_WIDTH((!FPU_ACC_SEL) ? fpu_ss_pkg::X_RFW_WIDTH : dummy_pkg::XRfwWidth),
+      .X_MISA     ((!FPU_ACC_SEL) ? fpu_ss_pkg::X_MISA : dummy_pkg::XMisa)
   ) ext_if ();
-  //if_xif #(
-  //    .X_NUM_RS   (dummy_accelerator_pkg::X_NUM_RS),
-  //    .X_ID_WIDTH (dummy_accelerator_pkg::X_ID_WIDTH),
-  //    .X_MEM_WIDTH(dummy_accelerator_pkg::X_MEM_WIDTH),
-  //    .X_RFR_WIDTH(dummy_accelerator_pkg::X_RFR_WIDTH),
-  //    .X_RFW_WIDTH(dummy_accelerator_pkg::X_RFW_WIDTH),
-  //    .X_MISA     (dummy_accelerator_pkg::X_MISA)
-  //) ext_if ();
-  //
 
   always_comb begin
     // All interrupt lines set to zero by default
@@ -602,7 +593,7 @@ module testharness #(
       );
 `endif
 
-      if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0) begin
+      if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0) begin: gen_coproc
         if (!FPU_ACC_SEL) begin : gen_fpu
           fpu_ss_wrapper #(
               .PULP_ZFINX(ZFINX),
@@ -624,37 +615,22 @@ module testharness #(
               .xif_mem_result_if(ext_if),
               .xif_result_if(ext_if)
           );
-        end else begin : gen_ext_copr
-          dummy_accelerator_wrapper #(
-              .WIDTH    (dummy_accelerator_pkg::XLEN),
-              .IMM_WIDTH(dummy_accelerator_pkg::IMM_WIDTH),
-              .CtlType_t(dummy_accelerator_pkg::CtlType_t),
-              .TagType_t(dummy_accelerator_pkg::TagType_t)
-          ) u_dummy_acc_wrapper_i (
-              // Clock and reset
-              .clk_i,
-              .rst_ni,
-              // eXtension Interface
-              .xif_issue_if (ext_if),
-              .xif_commit_if(ext_if),
-              .xif_result_if(ext_if)
+        end else begin : gen_dummy_coproc
+          dummy_xif_wrapper #(
+              .DATA_WIDTH(32'd32),
+              .MAX_LATENCY(32'd128),
+              .MAX_PIPE_DEPTH(32'd128),
+              .XIF_ID_WIDTH(dummy_pkg::XIdWidth)
+          ) dummy_xif_wrapper_i (
+              .clk_i         (clk_i),
+              .rst_ni        (rst_ni),
+              .xif_compressed(ext_if.coproc_compressed),
+              .xif_issue     (ext_if.coproc_issue),
+              .xif_commit    (ext_if.coproc_commit),
+              .xif_mem       (ext_if.coproc_mem),
+              .xif_mem_result(ext_if.coproc_mem_result),
+              .xif_result    (ext_if.coproc_result)
           );
-          // X-if compressed interface
-          assign ext_if.compressed_resp.accept = 1'b0;
-          assign ext_if.compressed_ready       = 1'b1;
-          assign ext_if.compressed_resp.instr  = '0;
-          // X-if memory interface
-          assign ext_if.mem_valid              = 1'b0;
-          assign ext_if.mem_req.id             = '0;
-          assign ext_if.mem_req.addr           = '0;
-          assign ext_if.mem_req.mode           = '0;
-          assign ext_if.mem_req.we             = 1'b0;
-          assign ext_if.mem_req.size           = '0;
-          assign ext_if.mem_req.be             = '0;
-          assign ext_if.mem_req.attr           = '0;
-          assign ext_if.mem_req.wdata          = '0;
-          assign ext_if.mem_req.last           = 1'b0;
-          assign ext_if.mem_req.spec           = 1'b0;
         end
       end
     end else begin : gen_DONT_USE_EXTERNAL_DEVICE_EXAMPLE
@@ -674,12 +650,7 @@ module testharness #(
       assign memcopy_intr = '0;
       assign iffifo_int_o = '0;
       assign periph_slave_rsp = '0;
-
     end
 
   endgenerate
-
-
-
-
 endmodule  // testharness

@@ -15,7 +15,6 @@ filesets:
     - openhwgroup.org:ip:cv32e40x
     - openhwgroup:cve2:cve2_top
     - esl_epfl:ip:cv32e40px
-    - polito:dummy_acc:dummy_acc
     - pulp-platform.org:ip:gpio
     - pulp-platform.org::common_cells
     - pulp-platform.org::cluster_interconnect
@@ -36,7 +35,6 @@ filesets:
     - x-heep:ip:fast_intr_ctrl
     - x-heep:ip:obi_fifo
     - x-heep:ip:pdm2pcm
-    - polito:dummy_acc:dummy_acc_wrapper
     files:
     - hw/core-v-mini-mcu/core_v_mini_mcu.sv
     - hw/core-v-mini-mcu/cpu_subsystem.sv

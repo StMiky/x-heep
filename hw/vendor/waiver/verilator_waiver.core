@@ -29,7 +29,6 @@ filesets:
     - lint/spi_host.vlt
     - lint/gpio.vlt
     - lint/fpu_ss.vlt
-    - lint/dummy_accelerator.vlt
     file_type: vlt
 
 

@@ -21,9 +21,9 @@ int main(void)
     source *= source2;  //1936
     // use either this block for iterative
     // ------------------------------------------------
-    DUMMY_ITERATIVE(dest, source, 7);
-    DUMMY_ITERATIVE(dest, source, 5);
-    DUMMY_ITERATIVE(dest, source, 12);
+    // DUMMY_PIPELINE(dest, source, 0);
+    DUMMY_PIPELINE(dest, source, 1);
+    DUMMY_PIPELINE(dest, source, 12);
     // ------------------------------------------------
     //or this block for pipeline. Constraint: latency MUST be constant
     // ------------------------------------------------
