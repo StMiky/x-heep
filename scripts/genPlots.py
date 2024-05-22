@@ -1,17 +1,17 @@
 import subprocess
 from tqdm import tqdm
+import concurrent.futures
 
 #-------------------------------------------------------------------------------- 
 # DEFINES
 #-------------------------------------------------------------------------------- 
-TYPE = ["ITERATIVE", "PIPELINE"]
-ROLLING = ["","-u"]
-DEPENDENCY = ["","-d"]
+TYPE = ["PIPELINE"]
+ROLLING = [""]
+DEPENDENCY = ["", "-d"]
 BOOKEEPING = ["", "--bookeep"]
-LATENCY = [1, 5]
+LATENCY = [10, 15]
 NBI = LATENCY
 INTERLEAVED = [100, 101]
-
 #-------------------------------------------------------------------------------- 
 # CODE 
 #-------------------------------------------------------------------------------- 
@@ -39,7 +39,7 @@ def genPlot(type, latency, nbi, bookeep, unroll, dependency):
     # Call the command
     subprocess.run(command, shell=True, capture_output=False, text=False)
 
-def callScript(type, latency, nbi, bookeep, unroll, dependency):
+def callScript(type, latency, nbi, bookeep, unroll, dependency, id):
     filename = getFilename(type, latency, nbi, bookeep, unroll, dependency)
 
     # Call the script
@@ -51,27 +51,55 @@ def callScript(type, latency, nbi, bookeep, unroll, dependency):
                                     {unroll}\
                                     {dependency}\
                                     --output {filename}\
-                                    --interleaved {convertListToString(INTERLEAVED)}")
+                                    --interleaved {convertListToString(INTERLEAVED)}\
+                                    --id {id}")
     
     # Call the subprocess
-    subprocess.run(command, shell=True,
-                    capture_output=False,
-                    text=False)#,
-                    #stdout=subprocess.DEVNULL,
-                    #stderr=subprocess.DEVNULL)
+    if (id == 0):
+        subprocess.run(command, shell=True,
+                        capture_output=False,
+                        text=False
+                        )
+    else:
+        subprocess.run(command, shell=True,
+                        capture_output=False,
+                        text=False
+                        # stdout=subprocess.DEVNULL,
+                        # stderr=subprocess.DEVNULL
+                        )
+
+def execute_task(params):
+    type, unroll, dependency, bookeep, id = params
+    callScript(type, LATENCY, NBI, bookeep, unroll, dependency, id)
+    genPlot(type, LATENCY, NBI, bookeep, unroll, dependency)
+    return 1
 
 def main():
 
     total = len(TYPE) * len(BOOKEEPING) * len(ROLLING) * len(DEPENDENCY)
-    bar = tqdm(total=total)
 
-    for type in TYPE:
-        for unroll in ROLLING:
-            for dependency in DEPENDENCY:
-                for bookeep in BOOKEEPING:
-                    callScript(type, LATENCY, NBI, bookeep, unroll, dependency)
-                    genPlot(type, LATENCY, NBI, bookeep, unroll, dependency)
-                    bar.update(1)
+    # for type in TYPE:
+    #     for unroll in ROLLING:
+    #         for dependency in DEPENDENCY:
+    #             for bookeep in BOOKEEPING:
+    #                 callScript(type, LATENCY, NBI, bookeep, unroll, dependency, id)
+    #                 genPlot(type, LATENCY, NBI, bookeep, unroll, dependency)
+    #                 bar.update(1)
+    params_list = [
+    (type, unroll, dependency, bookeep, id)
+    for id, (type, unroll, dependency, bookeep) in enumerate(
+        (type, unroll, dependency, bookeep)
+        for type in TYPE
+        for unroll in ROLLING
+        for dependency in DEPENDENCY
+        for bookeep in BOOKEEPING
+    )
+    ]
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        # Use tqdm to show progress bar
+        results = list(tqdm(executor.map(execute_task, params_list), total=len(params_list)))
+
 
 if __name__ == "__main__":
     main()

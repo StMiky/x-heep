@@ -1,5 +1,6 @@
 # Script to generate a kernel for the dummy accelerator
 
+import os
 import argparse
 from mako.template import Template
 import random
@@ -153,6 +154,11 @@ def main(args):
                                             block_b             = block_b,
                                             bookeeping_length   = args.bookeep
                                             )
+
+    # Check if directory exists
+    if not os.path.exists(os.path.dirname(args.output)):
+        os.makedirs(os.path.dirname(args.output))
+
 
     with open(args.output, 'w') as f:
         f.write(full_code)

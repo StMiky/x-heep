@@ -6,7 +6,7 @@ from tqdm import tqdm
 import argparse
 
 
-PROJECT_NAME = "dummy_accelerator_test"
+PROJECT_NAME = "dummy_accel"
 cycle_pattern = r'C (\d+)'
 inst_pattern = r'I (\d+)'
 
@@ -23,6 +23,7 @@ def parseArguments():
     parser.add_argument('--unroll', '-u', action="store_true", help='Unroll the main loop with calls to the accel')
     parser.add_argument('--bookeep', action="store_true", help='Unroll the main loop with calls to the accel')
     parser.add_argument('--output', type=str, required=True, help='.csv output')
+    parser.add_argument('--id', type=str, required=False, default=0, help='id of the current process, useful for multi-threading')
 
     args = parser.parse_args()
 
@@ -48,7 +49,22 @@ def gianCarlo(  type : str = ["PIPELINE", "ITERATIVE"], latency : int = 10, # Wa
                 unroll : str = "",
                 dependent : str = "",
                 template : str = "scripts/dummy_accel.c.tpl",
-                output : str = "sw/applications/dummy_accelerator_test/main.c"):
+                output : str = "sw/applications/dummy_accel/main.c",
+                id : int = 0):
+
+    command = f"rm -rf sw{id}"
+    subprocess.run(command, shell=True, capture_output=False, text=True)
+
+    command = f"rm -rf build{id}"
+    subprocess.run(command, shell=True, capture_output=False, text=True)
+
+    # Copy the sw directory, only for X-HEEP...
+    command = f"cp -r sw sw{id}"
+
+    subprocess.run(command, shell=True, capture_output=False, text=True)
+
+    command = f"cp -r build build{id}"
+    subprocess.run(command, shell=True, capture_output=False, text=True)
     
     # Call the script
     command = (f"python3 scripts/genDummyAccelKernel.py\
@@ -76,6 +92,8 @@ def parseNumber(pattern, output : str):
     # Extracting and printing the matched number if found
     if match:
         extracted_number = match.group(1)
+    else:
+        print(output)
     
     return extracted_number 
 
@@ -86,20 +104,15 @@ def parseIPC(output : str):
     return float(inst) / float(cycle)
 
 
-def kernelRunner():
+def kernelRunner(id):
     """Function to simulate work and output to stdout."""
 
     # Source toolchain
     command = "source /software/scripts/init_x_heep"
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-    # Basic error handling
-    if (result.returncode != 0):
-        sys.stdout.write(result.stderr)
-        return
+    subprocess.run(command, shell=True, capture_output=True, text=True)
 
     # Then run the simulation
-    command = f"make run-app-verilator PROJECT={PROJECT_NAME}"
+    command = f"make run-app-verilator PROJECT={PROJECT_NAME} ID={id}"
     result = subprocess.run(command, capture_output=True, text=True, shell=True)
 
     # Basic error handling
@@ -143,10 +156,12 @@ def main():
                     unroll="-u" if (args.unroll ) else "",
                     dependent="-d" if (args.dependency) else "",
                     bookeep=args.bookeep,
-                    n_block_b=nbi
+                    output=f"sw{args.id}/applications/dummy_accel/main.c",
+                    n_block_b=nbi,
+                    id=args.id
                 )
 
-                ipc = kernelRunner()
+                ipc = kernelRunner(args.id)
 
                 df = pushToDataFrame(df, args.type, interleaved, nbi, latency, ipc)
                 pbar.update(1)

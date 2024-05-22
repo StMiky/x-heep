@@ -18,7 +18,7 @@ void runCycles(unsigned int ncycles, Vtestharness *dut, VerilatedFstC *m_trace){
   for(unsigned int i = 0; i < ncycles; i++) {
     dut->clk_i ^= 1;
     dut->eval();
-    m_trace->dump(sim_time);
+    // m_trace->dump(sim_time);
     sim_time++;
   }
 }
@@ -37,10 +37,10 @@ int main (int argc, char * argv[])
   Vtestharness *dut = new Vtestharness;
 
   // Open VCD
-  Verilated::traceEverOn (true);
+  Verilated::traceEverOn (false); //was true
   VerilatedFstC *m_trace = new VerilatedFstC;
-  dut->trace (m_trace, 99);
-  m_trace->open ("waveform.vcd");
+  // dut->trace (m_trace, 99);
+  // m_trace->open ("waveform.vcd");
 
   XHEEP_CmdLineOptions* cmd_lines_options = new XHEEP_CmdLineOptions(argc,argv);
 
@@ -79,7 +79,7 @@ int main (int argc, char * argv[])
   dut->boot_select_i        = boot_sel;
 
   dut->eval();
-  m_trace->dump(sim_time);
+  // m_trace->dump(sim_time);
   sim_time++;
 
   dut->rst_ni               = 1;
@@ -118,7 +118,7 @@ int main (int argc, char * argv[])
     exit_val = EXIT_SUCCESS;
   } else exit_val = EXIT_FAILURE;
 
-  m_trace->close();
+  // m_trace->close();
   delete dut;
   delete cmd_lines_options;
 

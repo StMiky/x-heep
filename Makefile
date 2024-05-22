@@ -45,6 +45,9 @@ X_HEEP_CFG  ?= configs/general.hjson
 PAD_CFG  	?= pad_cfg.hjson
 EXT_PAD_CFG ?=
 
+ID ?= 0
+FIRMWARE ?= sw${ID}/build/main.hex
+
 # Compiler options are 'gcc' (default) and 'clang'
 COMPILER ?= gcc
 
@@ -147,8 +150,8 @@ verible:
 ## @param COMPILER=gcc(default), clang
 ## @param COMPILER_PREFIX=riscv32-unknown-(default)
 ## @param ARCH=rv32imc(default), <any RISC-V ISA string supported by the CPU>
-app: clean-app
-	$(MAKE) -C sw PROJECT=$(PROJECT) TARGET=$(TARGET) LINKER=$(LINKER) COMPILER=$(COMPILER) COMPILER_PREFIX=$(COMPILER_PREFIX) ARCH=$(ARCH) SOURCE=$(SOURCE)
+app: 
+	$(MAKE) -C sw${ID} PROJECT=$(PROJECT) TARGET=$(TARGET) LINKER=$(LINKER) COMPILER=$(COMPILER) COMPILER_PREFIX=$(COMPILER_PREFIX) ARCH=$(ARCH) SOURCE=$(SOURCE)
 
 ## Just list the different application names available
 app-list:
@@ -219,8 +222,8 @@ run-blinkyfreertos: mcu-gen verilator-sim
 ## First builds the app and then uses verilator to simulate the HW model and run the FW
 ## UART Dumping in uart0.log to show recollected results
 run-app-verilator: app
-	cd ./build/openhwgroup.org_systems_core-v-mini-mcu_0/sim-verilator; \
-	./Vtestharness +firmware=../../../sw/build/main.hex +max_sim_time=1000000; \
+	cd ./build${ID}/openhwgroup.org_systems_core-v-mini-mcu_0/sim-verilator; \
+	./Vtestharness +firmware=../../../$(FIRMWARE) +max_sim_time=1000000; \
 	cat uart0.log; \
 	cd ../../..;
 

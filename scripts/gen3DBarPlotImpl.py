@@ -1,6 +1,9 @@
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import griddata
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Generate 2D bar plot of implementation IPC/Latency')
@@ -40,13 +43,28 @@ def main():
     #         ax.plot_trisurf(group['Latency'], group['NBI'], group['IPC'], cmap=plt.cm.viridis, label=name)
 
     # Select those belonging to type args.type
-    for name, group in grouped:
-        if (name == args.type):
-            # Group by latency
-            for latency, latency_group in group.groupby('Latency'):
-                # Group by NBI
-                for nbi, nbi_group in latency_group.groupby('NBI'):
-                    ax.bar3d(nbi_group['Latency'], nbi_group['NBI'], shiftup, 0.5, 0.5, nbi_group['IPC']-shiftup, label=name, shade=True, color=plt.cm.viridis(nbi_group['IPC']))
+    # for name, group in grouped:
+    #     if (name == args.type):
+    #         # Group by latency
+    #         for latency, latency_group in group.groupby('Latency'):
+    #             # Group by NBI
+    #             for nbi, nbi_group in latency_group.groupby('NBI'):
+    #                 ax.bar3d(nbi_group['Latency'], nbi_group['NBI'], shiftup, 0.5, 0.5, nbi_group['IPC']-shiftup, label=name, shade=True, color=plt.cm.viridis(nbi_group['IPC']))
+    
+    # Create grid data for interpolation
+    filtered_df = df[df['Type'] == args.type]
+    latencies = np.linspace(filtered_df['Latency'].min(), filtered_df['Latency'].max(), 100)
+    nbis = np.linspace(filtered_df['NBI'].min(), filtered_df['NBI'].max(), 100)
+    latencies_grid, nbis_grid = np.meshgrid(latencies, nbis)
+
+    # Interpolate IPC values on the grid
+    ipc_grid = griddata((filtered_df['Latency'], filtered_df['NBI']), filtered_df['IPC'], (latencies_grid, nbis_grid), method='cubic')
+
+    # Plot the interpolated surface
+    surf = ax.plot_surface(latencies_grid, nbis_grid, ipc_grid, cmap=plt.cm.coolwarm, edgecolor='none', vmin=0, vmax=1)
+
+    # Plot an interpolated surface
+    
     
     
     # # Add spacing between the bars and use a different color scheme
