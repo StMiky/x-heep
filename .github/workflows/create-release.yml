@@ -59,6 +59,7 @@ jobs:
           if [ "$GCC_VERSION" != "$GCC_VERSION_NEW" ] || [ "$LLVM_VERSION" != "$LLVM_VERSION_NEW" ]; then
             REBUILD_TOOLCHAIN="true"
           fi
+          echo "Rebuild toolchain: $REBUILD_TOOLCHAIN"
           echo "rebuild_toolchain=$REBUILD_TOOLCHAIN" >> $GITHUB_OUTPUT
 
           # Check Docker file changes between PREV_TAG and HEAD
@@ -67,6 +68,7 @@ jobs:
           if [ "$REBUILD_TOOLCHAIN" == "true" ] || [ -n "$CHANGED" ]; then
             REBUILD_DOCKER="true"
           fi
+          echo "Rebuild Docker: $REBUILD_DOCKER"
           echo "rebuild_docker=$REBUILD_DOCKER" >> $GITHUB_OUTPUT
 
   prepare-release:
