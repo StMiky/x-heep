@@ -77,6 +77,9 @@ jobs:
     name: Build and Upload Toolchain
     runs-on: ubuntu-22.04
     needs: prepare-release
+    permissions:
+      contents: write
+      packages: write
     outputs:
       tarball_name: ${{ steps.package.outputs.TARBALL_NAME }}
     steps:
