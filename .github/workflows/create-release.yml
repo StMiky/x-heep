@@ -296,6 +296,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare-release, build-docker]
     permissions:
+      contents: write
       pull-requests: write
     steps:
       - name: Checkout repository
