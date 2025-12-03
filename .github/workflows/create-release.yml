@@ -62,7 +62,7 @@ jobs:
           echo "rebuild_toolchain=$REBUILD_TOOLCHAIN" >> $GITHUB_OUTPUT
 
           # Check Docker file changes between PREV_TAG and HEAD
-          CHANGED=$(git diff --name-only $PREV_TAG HEAD -- util/docker/ .github/workflows/create-release.yml)
+          CHANGED=$(git diff --name-only $PREV_TAG HEAD -- util/docker/ .github/workflows/create-release.yml util/conda_environment.yml util/python-requirements.txt docs/python-requirements.txt)
           REBUILD_DOCKER="false"
           if [ "$REBUILD_TOOLCHAIN" == "true" ] || [ -n "$CHANGED" ]; then
             REBUILD_DOCKER="true"
