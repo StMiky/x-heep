@@ -104,7 +104,7 @@ FOREACH(file_path ${new_list})
 ENDFOREACH()
 
 LIST(REMOVE_DUPLICATES dir_list_str) 
-string(REPLACE ";" "" dir_list_str ${dir_list_str}) #This has been moved here to avoid multiple includes of the same path, see: https://github.com/esl-epfl/x-heep/issues/470
+string(REPLACE ";" "" dir_list_str ${dir_list_str}) #This has been moved here to avoid multiple includes of the same path, see: https://github.com/x-heep/x-heep/issues/470
 LIST(REMOVE_DUPLICATES h_dir_list_)
 
 

@@ -4,7 +4,7 @@ There are two ways of setting up X-HEEP. You can either use the provided Docker 
 
 ## Docker setup
 
-A Docker image containing all the required software dependencies is available on [github-packages](https://ghcr.io/esl-epfl/x-heep/x-heep-toolchain:latest).
+A Docker image containing all the required software dependencies is available on [github-packages](https://ghcr.io/x-heep/x-heep/x-heep-toolchain:latest).
 
 It is only required to [install Docker](https://docs.docker.com/engine/install/), pull the image and run the container. The pull and run steps are wrapped in dedicated `makefile` targets that you can access from the top-level directory as:
 ```bash

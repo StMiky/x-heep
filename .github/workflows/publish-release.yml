@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: esl-epfl/x-heep/x-heep-toolchain
+  IMAGE_NAME: x-heep/x-heep/x-heep-toolchain
 
 jobs:
   publish-release:

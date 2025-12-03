@@ -45,7 +45,7 @@ This workflow ensures the stability and integrity of the codebase by running a s
 2.  **`compile-apps`**:
     *   **Purpose**: Compiles all software applications with both GCC and Clang to ensure they build correctly.
     *   **Dependencies**: Depends on `determine-image-tag` to select the correct Docker image.
-    *   **Environment**: Runs inside the `ghcr.io/esl-epfl/x-heep/x-heep-toolchain` Docker container.
+    *   **Environment**: Runs inside the `ghcr.io/x-heep/x-heep/x-heep-toolchain` Docker container.
     *   **Steps**:
         *   Generates the MCU configuration using `make mcu-gen X_HEEP_CFG=configs/ci.hjson`.
         *   Executes `test/test_apps/test_apps.py` with the `--compile-only` flag to build all applications, without simulating them. This is done to offer a quick feedback about the apps' integrity, before their runtime behaviour is checked in RTL simulation.
