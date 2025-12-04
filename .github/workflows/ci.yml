@@ -28,6 +28,8 @@ jobs:
       - name: Determine tag
         id: get-tag
         run: |
+          UPSTREAM_URL=$(git remote get-url upstream 2>/dev/null || git remote get-url origin 2>/dev/null)
+          git fetch --tags "$UPSTREAM_URL"
           TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null) || TAG_NAME=""
           if [ -z "$TAG_NAME" ]; then
             echo "No tag in branch history, getting latest tag from main"
