@@ -28,12 +28,12 @@ jobs:
       - name: Determine tag
         id: get-tag
         run: |
-          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null)
-          if [ $? -ne 0 ]; then
+          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null) || TAG_NAME=""
+          if [ -z "$TAG_NAME" ]; then
             echo "No tag in branch history, getting latest tag from main"
-            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null)
+            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null) || TAG_NAME=""
           fi
-          if [ $? -ne 0 ]; then
+          if [ -z "$TAG_NAME" ]; then
             echo "No tags found, defaulting to `latest`"
             TAG_NAME="latest"
           fi

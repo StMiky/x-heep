@@ -3,6 +3,10 @@ name: Create X-HEEP Release
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: 'Tag for the GitHub release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
       llvm_version:
         description: 'LLVM version tag to build (e.g., llvmorg-19.1.4)'
         required: true
@@ -11,14 +15,12 @@ on:
         description: 'GCC version tag to build (e.g., 2023.01.03)'
         required: true
         default: '2023.01.03'
-      release_tag:
-        description: 'Tag for the GitHub release (e.g., v1.0.0)'
-        required: true
-        default: 'v1.0.0'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: x-heep/x-heep/x-heep-toolchain
+  VERILATOR_VERSION: v5.040
+  VERIBLE_VERSION: v0.0-4023-gc1271a00
 
 jobs:
   check-changes:
@@ -40,6 +42,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GCC_VERSION_NEW: ${{ inputs.gcc_version }}
           LLVM_VERSION_NEW: ${{ inputs.llvm_version }}
+          VERILATOR_VERSION_NEW: ${{ env.VERILATOR_VERSION }}
+          VERIBLE_VERSION_NEW: ${{ env.VERIBLE_VERSION }}
         run: |
           # Get latest release
           PREV_TAG=$(gh release list --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName' || echo "")
@@ -54,7 +58,7 @@ jobs:
           fi
 
           # Try to fetch toolchain versions from metadata file
-          gh release download $PREV_TAG -p "toolchain-versions.env" -D /tmp && source "/tmp/toolchain-versions.env" || GCC_VERSION="" LLVM_VERSION=""
+          gh release download $PREV_TAG -p "tool-versions.env" -D /tmp && source "/tmp/tool-versions.env" || GCC_VERSION="" LLVM_VERSION="" VERILATOR_VERSION="" VERIBLE_VERSION=""
           REBUILD_TOOLCHAIN="false"
           if [ "$GCC_VERSION" != "$GCC_VERSION_NEW" ] || [ "$LLVM_VERSION" != "$LLVM_VERSION_NEW" ]; then
             REBUILD_TOOLCHAIN="true"
@@ -63,9 +67,9 @@ jobs:
           echo "rebuild_toolchain=$REBUILD_TOOLCHAIN" >> $GITHUB_OUTPUT
 
           # Check Docker file changes between PREV_TAG and HEAD
-          CHANGED=$(git diff --name-only $PREV_TAG HEAD -- util/docker/ .github/workflows/create-release.yml util/conda_environment.yml util/python-requirements.txt docs/python-requirements.txt)
+          CHANGED=$(git diff --name-only $PREV_TAG HEAD -- util/docker/ util/conda_environment.yml util/python-requirements.txt docs/python-requirements.txt)
           REBUILD_DOCKER="false"
-          if [ "$REBUILD_TOOLCHAIN" == "true" ] || [ -n "$CHANGED" ]; then
+          if [ "$REBUILD_TOOLCHAIN" == "true" ] || [ -n "$CHANGED" ] || [ "$VERILATOR_VERSION" != "$VERILATOR_VERSION_NEW" ] || [ "$VERIBLE_VERSION" != "$VERIBLE_VERSION_NEW" ]; then
             REBUILD_DOCKER="true"
           fi
           echo "Rebuild Docker: $REBUILD_DOCKER"
@@ -105,21 +109,24 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
+          IMAGE_ID: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.event.inputs.release_tag }}
           release_name: X-HEEP ${{ github.event.inputs.release_tag }}
           commitish: ${{ steps.bump_versions.outputs.BRANCH_NAME }}
           body: |
-            This release includes the X-HEEP code and the following components:
-            - GCC toolchain, version ${{ github.event.inputs.gcc_version }}
-            - LLVM/Clang toolchain, version ${{ github.event.inputs.llvm_version }}
+            This release includes the X-HEEP code and the following toolchain components:
+            - GCC RISC-V toolchain
+            - LLVM/Clang RISC-V toolchain
 
-            You can pull and use the latest Docker container integrating the above components with the following commands:
+            You can pull and use the latest [X-HEEP Docker image](https://${{ env.IMAGE_ID }}) with the following commands:
             ```bash
             make -C util/docker docker-pull
             make -C util/docker docker-run
             ```
+
+            Check `tool-versions.env` in the release assets for specific version details.
           draft: true
           prerelease: false
 
@@ -137,12 +144,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install build dependencies
+        if: needs.check-changes.outputs.rebuild_toolchain == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build git lld
+            build-essential cmake ninja-build lld
 
       - name: Clean Up Runner
+        if: needs.check-changes.outputs.rebuild_toolchain == 'true'
         run: |
           docker rmi `docker images -q` || true
           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php apt/sources.list.d
@@ -225,9 +234,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "GCC_VERSION=${{ inputs.gcc_version }}" > toolchain-versions.env
-          echo "LLVM_VERSION=${{ inputs.llvm_version }}" >> toolchain-versions.env
-          gh release upload ${{ inputs.release_tag }} toolchain-versions.env
+          echo "GCC_VERSION=${{ inputs.gcc_version }}" > tool-versions.env
+          echo "LLVM_VERSION=${{ inputs.llvm_version }}" >> tool-versions.env
+          echo "VERILATOR_VERSION=${{ env.VERILATOR_VERSION }}" >> tool-versions.env
+          echo "VERIBLE_VERSION=${{ env.VERIBLE_VERSION }}" >> tool-versions.env
+          gh release upload ${{ inputs.release_tag }} tool-versions.env
 
   build-docker:
     name: Build and Publish Docker Container
@@ -279,8 +290,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             toolchain_path=toolchain.tar.gz
-            verilator_version=5.040
-            verible_version=v0.0-4023-gc1271a00
+            verilator_version=${{ env.VERILATOR_VERSION }}
+            verible_version=${{ env.VERIBLE_VERSION }}
 
       - name: Retag Docker Image
         if: needs.check-changes.outputs.rebuild_docker == 'false'
