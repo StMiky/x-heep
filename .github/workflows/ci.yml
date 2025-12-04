@@ -28,13 +28,12 @@ jobs:
       - name: Determine tag
         id: get-tag
         run: |
-          UPSTREAM_URL=$(git remote get-url upstream 2>/dev/null || git remote get-url origin 2>/dev/null)
-          git remote get-url upstream
+          UPSTREAM_URL=$(git remote get-url upstream 2>/dev/null || echo "https://github.com/x-heep/x-heep.git")
           git fetch --tags "$UPSTREAM_URL"
-          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null) || TAG_NAME=""
+          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null || echo TAG_NAME="")
           if [ -z "$TAG_NAME" ]; then
             echo "No tag in branch history, getting latest tag from main"
-            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null) || TAG_NAME=""
+            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null || echo TAG_NAME="")
           fi
           if [ -z "$TAG_NAME" ]; then
             echo "No tags found, defaulting to `latest`"
