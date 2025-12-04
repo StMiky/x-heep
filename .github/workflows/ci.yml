@@ -31,11 +31,11 @@ jobs:
         run: |
           # UPSTREAM_URL=$(git remote get-url upstream 2>/dev/null || echo "https://github.com/x-heep/x-heep.git")
           # git fetch --tags "$UPSTREAM_URL"
-          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null || echo TAG_NAME="")
+          TAG_NAME=$(git describe --tags --abbrev=0 2> /dev/null || echo "")
           echo "tag: $TAG_NAME"
           if [ -z "$TAG_NAME" ]; then
             echo "No tag in branch history, getting latest tag from main"
-            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null || echo TAG_NAME="")
+            TAG_NAME=$(git describe --tags --abbrev=0 origin/main 2> /dev/null || echo "")
           fi
           if [ -z "$TAG_NAME" ]; then
             echo "No tags found, defaulting to `latest`"
